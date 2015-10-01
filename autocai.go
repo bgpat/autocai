@@ -2,13 +2,13 @@ package main
 
 import (
 	"io"
-	//"fmt"
 	"strings"
-	//"strconv"
+	"strconv"
 	"net/http"
 	"net/url"
-	//"io/ioutil"
+	"database/sql"
 	"github.com/PuerkitoBio/goquery"
+	_ "github.com/mattn/go-sqlite3"
 	"code.google.com/p/go.text/encoding/japanese"
 	"code.google.com/p/go.text/transform"
 )
@@ -29,24 +29,55 @@ func getList() []string {
 		href, _ := s.Attr("href")
 		i := strings.Index(href, "?exe_dir=")
 		if i != -1 {
-			query := href[i:]
-			url = append(url, "http://shirodanuki.cs.shinshu-u.ac.jp/cgi-bin/olts/sys/top.cgi" + query)
+			query := href[i + 9:]
+			url = append(url, query)
 		}
 	})
 	return url
 }
 
-func main() {
-	urls := getList()
-	println(urls[0])
-	res, _ := http.Get(urls[0])
+func crawl(exe_dir string, db *sql.DB) {
+	res, _ := http.PostForm("http://shirodanuki.cs.shinshu-u.ac.jp/cgi-bin/olts/sys/exercise.cgi",
+		url.Values{
+			"name": {"hoge"},
+			"id": {"hogehoge"},
+			"email": {""},
+			"exe_dir": {exe_dir},
+			"chapter": {""},
+			"url": {"http://webmizar.cs.shinshu-u.ac.jp/learn/infomath/"},
+		},
+	)
 	defer res.Body.Close()
 	utf8 := euc2utf8(res.Body)
 	doc, _ := goquery.NewDocumentFromReader(utf8)
-	println(doc.Text())
-	/*
-	for i, url := range(urls) {
-		println(strconv.Itoa(i) + ": " + url)
+	question := strings.TrimSpace(doc.Find("blockquote").Text())
+	tmp, _ := doc.Find("input[name=tmp]").Attr("value")
+	res, _ = http.PostForm("http://shirodanuki.cs.shinshu-u.ac.jp/cgi-bin/olts/sys/answer.cgi",
+		url.Values{
+			"answer": {""},
+			"subject": {""},
+			"chapter": {""},
+			"url": {"http://webmizar.cs.shinshu-u.ac.jp/learn/infomath/"},
+			"tmp": {tmp},
+		},
+	)
+	defer res.Body.Close()
+	utf8 = euc2utf8(res.Body)
+	doc, _ = goquery.NewDocumentFromReader(utf8)
+	answer := strings.TrimSpace(doc.Find("blockquote tt b").Text())
+	stmt, _ := db.Prepare("INSERT INTO `cai` (`exe_dir`, `question`, `answer`) VALUES (?, ?, ?)")
+	stmt.Exec(exe_dir, question, answer)
+}
+
+func main() {
+	db, _ := sql.Open("sqlite3", "./cai.db")
+	defer db.Close()
+	db.Exec("CREATE TABLE `cai` (`id` integer PRIMARY KEY AUTOINCREMENT, `exe_dir` text, `question` text, `answer` text, UNIQUE (`exe_dir`, `question`))")
+	list := getList()
+	for i := range(list) {
+		for j := 0; j < 100; j++ {
+			crawl(list[i], db)
+		}
+		println(strconv.Itoa(i))
 	}
-	*/
 }
