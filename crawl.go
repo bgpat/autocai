@@ -1,9 +1,8 @@
-package crawl
+package main
 
 import (
 	"io"
 	"strings"
-	"strconv"
 	"net/http"
 	"net/url"
 	"database/sql"
@@ -69,15 +68,16 @@ func crawl(exe_dir string, db *sql.DB) {
 	stmt.Exec(exe_dir, question, answer)
 }
 
-func crawl() {
+func main() {
 	db, _ := sql.Open("sqlite3", "./cai.db")
 	defer db.Close()
-	db.Exec("CREATE TABLE `cai` (`id` integer PRIMARY KEY AUTOINCREMENT, `exe_dir` text, `question` text, `answer` text, UNIQUE (`exe_dir`, `question`))")
+	db.Exec("CREATE TABLE `cai` (`id` integer PRIMARY KEY AUTOINCREMENT, `exe_dir` text, `question` text, `answer` text, UNIQUE (`exe_dir`, `question`, `answer`))")
+	db.Exec("CREATE TABLE `process` (`exe_dir` text PRIMARY KEY, `tmp` text)")
 	list := getList()
 	for i := range(list) {
-		for j := 0; j < 100; j++ {
+		for j := 0; j < 10000; j++ {
 			crawl(list[i], db)
 		}
-		println(strconv.Itoa(i))
+		println(list[i])
 	}
 }
