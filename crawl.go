@@ -49,7 +49,8 @@ func crawl(exe_dir string, db *sql.DB) {
 	defer res.Body.Close()
 	utf8 := euc2utf8(res.Body)
 	doc, _ := goquery.NewDocumentFromReader(utf8)
-	question := strings.TrimSpace(doc.Find("blockquote").Text())
+	html, _ := doc.Find("blockquote").Html()
+	question := strings.TrimSpace(html)
 	tmp, _ := doc.Find("input[name=tmp]").Attr("value")
 	res, _ = http.PostForm("http://shirodanuki.cs.shinshu-u.ac.jp/cgi-bin/olts/sys/answer.cgi",
 		url.Values{
@@ -75,7 +76,7 @@ func main() {
 	db.Exec("CREATE TABLE `process` (`exe_dir` text PRIMARY KEY, `tmp` text)")
 	list := getList()
 	for i := range(list) {
-		for j := 0; j < 10000; j++ {
+		for j := 0; j < 100; j++ {
 			crawl(list[i], db)
 		}
 		println(list[i])
