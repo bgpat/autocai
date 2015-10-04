@@ -3,6 +3,7 @@ package main
 
 import (
 	"io"
+	"fmt"
 	"strings"
 	"io/ioutil"
 	"net/http"
@@ -45,15 +46,15 @@ func getList() []string {
 	return url
 }
 
-func crawl(exe_dir string, db *sql.DB) {
+func resolve(exe_dir string, db *sql.DB, name, id, email string) {
 	row := db.QueryRow("SELECT `tmp` FROM `process` WHERE `exe_dir` = ?", exe_dir)
 	var tmp string
 	row.Scan(&tmp)
 	res, _ := http.PostForm("http://shirodanuki.cs.shinshu-u.ac.jp/cgi-bin/olts/sys/exercise.cgi",
 	url.Values{
-		"name": {"<>"},
-		"id": {"<>"},
-		"email": {""},
+		"name": {name},
+		"id": {id},
+		"email": {email},
 		"exe_dir": {exe_dir},
 		"chapter": {""},
 		"url": {"http://webmizar.cs.shinshu-u.ac.jp/learn/infomath/"},
@@ -99,15 +100,26 @@ func crawl(exe_dir string, db *sql.DB) {
 	if strings.Contains(doc.Text(), "おめでとうございます") {
 		println(exe_dir)
 	} else {
-		crawl(exe_dir, db)
+		resolve(exe_dir, db, name, id, email)
 	}
 }
 
 func main() {
 	db, _ := sql.Open("sqlite3", "./cai.db")
 	defer db.Close()
+	var name, id, email string
+	fmt.Printf("name > ")
+	fmt.Scanln(&name)
+	fmt.Printf("id > ")
+	fmt.Scanln(&id)
+	fmt.Printf("email > ")
+	fmt.Scanln(&email)
 	list := getList()
 	for i := range(list) {
-		crawl(list[i], db)
+		fmt.Printf("[%d] %s\n", i, list[i])
 	}
+	var n int
+	fmt.Printf("chapter > ")
+	fmt.Scanf("%d", &n)
+	resolve(list[n], db, name, id, email)
 }
