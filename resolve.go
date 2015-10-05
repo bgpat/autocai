@@ -1,18 +1,20 @@
 package main
+
 //package resolve
 
 import (
-	"io"
+	"code.google.com/p/go.text/encoding/japanese"
+	"code.google.com/p/go.text/transform"
+	"database/sql"
 	"fmt"
-	"strings"
+	"github.com/PuerkitoBio/goquery"
+	_ "github.com/mattn/go-sqlite3"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"database/sql"
-	"github.com/PuerkitoBio/goquery"
-	_ "github.com/mattn/go-sqlite3"
-	"code.google.com/p/go.text/encoding/japanese"
-	"code.google.com/p/go.text/transform"
+	"strings"
+	"time"
 )
 
 func euc2utf(src io.Reader) io.Reader {
@@ -39,27 +41,28 @@ func getList() []string {
 		href, _ := s.Attr("href")
 		i := strings.Index(href, "?exe_dir=")
 		if i != -1 {
-			query := href[i + 9:]
+			query := href[i+9:]
 			url = append(url, query)
 		}
 	})
 	return url
 }
 
-func resolve(exe_dir string, db *sql.DB, name, id, email string) {
+func resolve(exe_dir string, db *sql.DB, name, id, email string, t int) {
+	time.Sleep(time.Duration(t) * time.Millisecond * 100)
 	row := db.QueryRow("SELECT `tmp` FROM `process` WHERE `exe_dir` = ?", exe_dir)
 	var tmp string
 	row.Scan(&tmp)
 	res, _ := http.PostForm("http://shirodanuki.cs.shinshu-u.ac.jp/cgi-bin/olts/sys/exercise.cgi",
-	url.Values{
-		"name": {name},
-		"id": {id},
-		"email": {email},
-		"exe_dir": {exe_dir},
-		"chapter": {""},
-		"url": {"http://webmizar.cs.shinshu-u.ac.jp/learn/infomath/"},
-		"tmp": {tmp},
-	},)
+		url.Values{
+			"name":    {name},
+			"id":      {id},
+			"email":   {email},
+			"exe_dir": {exe_dir},
+			"chapter": {""},
+			"url":     {"http://webmizar.cs.shinshu-u.ac.jp/learn/infomath/"},
+			"tmp":     {tmp},
+		})
 	defer res.Body.Close()
 	utf8 := euc2utf(res.Body)
 	doc, _ := goquery.NewDocumentFromReader(utf8)
@@ -85,13 +88,13 @@ func resolve(exe_dir string, db *sql.DB, name, id, email string) {
 	}
 	answer, _ = utf2euc(answer)
 	res, _ = http.PostForm("http://shirodanuki.cs.shinshu-u.ac.jp/cgi-bin/olts/sys/answer.cgi",
-	url.Values{
-		"answer": {answer},
-		"subject": {""},
-		"chapter": {""},
-		"url": {"http://webmizar.cs.shinshu-u.ac.jp/learn/infomath/"},
-		"tmp": {tmp},
-	},)
+		url.Values{
+			"answer":  {answer},
+			"subject": {""},
+			"chapter": {""},
+			"url":     {"http://webmizar.cs.shinshu-u.ac.jp/learn/infomath/"},
+			"tmp":     {tmp},
+		})
 	defer res.Body.Close()
 	utf8 = euc2utf(res.Body)
 	doc, _ = goquery.NewDocumentFromReader(utf8)
@@ -100,7 +103,7 @@ func resolve(exe_dir string, db *sql.DB, name, id, email string) {
 	if strings.Contains(doc.Text(), "おめでとうございます") {
 		println(exe_dir)
 	} else {
-		resolve(exe_dir, db, name, id, email)
+		resolve(exe_dir, db, name, id, email, t)
 	}
 }
 
@@ -115,11 +118,13 @@ func main() {
 	fmt.Printf("email > ")
 	fmt.Scanln(&email)
 	list := getList()
-	for i := range(list) {
+	for i := range list {
 		fmt.Printf("[%d] %s\n", i, list[i])
 	}
-	var n int
+	var n, t int
 	fmt.Printf("chapter > ")
 	fmt.Scanf("%d", &n)
-	resolve(list[n], db, name, id, email)
+	fmt.Printf("time[sec] > ")
+	fmt.Scanf("%d", &t)
+	resolve(list[n], db, name, id, email, t)
 }
