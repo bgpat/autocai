@@ -2,6 +2,7 @@ package main
 
 import (
 	"io"
+	"fmt"
 	"strings"
 	"net/http"
 	"net/url"
@@ -75,10 +76,21 @@ func main() {
 	db.Exec("CREATE TABLE `cai` (`id` integer PRIMARY KEY AUTOINCREMENT, `exe_dir` text, `question` text, `answer` text, UNIQUE (`exe_dir`, `question`, `answer`))")
 	db.Exec("CREATE TABLE `process` (`exe_dir` text PRIMARY KEY, `tmp` text)")
 	list := getList()
+	for i := range list {
+		fmt.Printf("[%d] %s\n", i, list[i])
+	}
+	var c int
+	n := 100
+	fmt.Printf("chapter [all scan] > ")
+	once, _ := fmt.Scanf("%d", &c)
+	fmt.Printf("how many times [100] > ")
+	fmt.Scanf("%d", &n)
 	for i := range(list) {
-		for j := 0; j < 100; j++ {
-			crawl(list[i], db)
+		if (once == 0 || c == i) {
+			for j := 0; j < n; j++ {
+				crawl(list[i], db)
+			}
+			println(list[i])
 		}
-		println(list[i])
 	}
 }

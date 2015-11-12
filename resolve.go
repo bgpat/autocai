@@ -78,12 +78,13 @@ func resolve(exe_dir string, db *sql.DB, name, id, email string, t int) {
 		row := stmt.QueryRow(exe_dir, question)
 		row.Scan(&answer)
 	} else {
-		stmt, _ := db.Prepare("SELECT `answer` FROM `cai` WHERE `exe_dir` = ? AND `question` = ? AND `answer` in (?, ?, ?)")
+		stmt, _ := db.Prepare("SELECT `answer` FROM `cai` WHERE `exe_dir` = ? AND `question` = ? AND `answer` in (?, ?, ?, ?)")
 		defer stmt.Close()
 		a1, _ := answers.Attr("value")
-		a2, _ := answers.Next().Attr("value")
-		a3, _ := answers.Next().Next().Attr("value")
-		row := stmt.QueryRow(exe_dir, question, a1, a2, a3)
+		a2, _ := answers.Next().Next().Attr("value")
+		a3, _ := answers.Next().Next().Next().Next().Attr("value")
+		a4, _ := answers.Next().Next().Next().Next().Next().Next().Attr("value")
+		row := stmt.QueryRow(exe_dir, question, a1, a2, a3, a4)
 		row.Scan(&answer)
 	}
 	answer, _ = utf2euc(answer)
