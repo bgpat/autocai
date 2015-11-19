@@ -15,6 +15,8 @@ import (
 	"net/url"
 	"strings"
 	"time"
+	"bufio"
+	"os"
 )
 
 func euc2utf(src io.Reader) io.Reader {
@@ -111,13 +113,16 @@ func resolve(exe_dir string, db *sql.DB, name, id, email string, t int) {
 func main() {
 	db, _ := sql.Open("sqlite3", "./cai.db")
 	defer db.Close()
-	var name, id, email string
+	stdin := bufio.NewScanner(os.Stdin)
 	fmt.Printf("name > ")
-	fmt.Scanln(&name)
+	stdin.Scan()
+	name := stdin.Text()
 	fmt.Printf("id > ")
-	fmt.Scanln(&id)
+	stdin.Scan()
+	id := stdin.Text()
 	fmt.Printf("email > ")
-	fmt.Scanln(&email)
+	stdin.Scan()
+	email := stdin.Text()
 	list := getList()
 	for i := range list {
 		fmt.Printf("[%d] %s\n", i, list[i])
