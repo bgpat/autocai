@@ -3,8 +3,8 @@ package main
 //package resolve
 
 import (
-	"code.google.com/p/go.text/encoding/japanese"
-	"code.google.com/p/go.text/transform"
+	"golang.org/x/text/encoding/japanese"
+	"golang.org/x/text/transform"
 	"database/sql"
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
