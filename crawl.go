@@ -9,8 +9,8 @@ import (
 	"database/sql"
 	"github.com/PuerkitoBio/goquery"
 	_ "github.com/mattn/go-sqlite3"
-	"code.google.com/p/go.text/encoding/japanese"
-	"code.google.com/p/go.text/transform"
+	"golang.org/x/text/encoding/japanese"
+	"golang.org/x/text/transform"
 )
 
 func euc2utf8(src io.Reader) io.Reader {
